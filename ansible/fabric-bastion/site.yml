@@ -1,0 +1,4 @@
+---
+# file: site.yml
+- import_playbook: fabric-playbook-ancillary.yml
+

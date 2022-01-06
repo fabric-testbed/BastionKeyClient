@@ -1,0 +1,33 @@
+---
+# tasks file for user-experimenter
+
+#
+# Add user to the host for experimenter user dynamically
+#
+- name: User Bastion - add/remove experimenter users
+  user:
+    name: "{{ item.username }}"
+    shell: "{{ item.shell }}"
+    groups: "{{ item.groups }}"
+    append: yes
+    state: "{{ item.state }}"
+    remove: "{{ item.remove }}"
+    force: "{{ item.force }}"
+    create_home: "{{ item.create_home }}"
+    comment: "{{ item.name }}"
+  with_items:
+    - "{{ community.experimenter }}"
+  tags: user-experimenter-dynamic
+
+- name: User Bastion - add sshkey for experimenter users
+  authorized_key:
+    user: "{{ item.0.username }}"
+    key: "{{ item.1.key }}"
+    state: "{{ item.1.state }}"
+  ignore_errors: yes
+  with_subelements:
+    - "{{ community.experimenter }}"
+    - ssh_key
+  when: item.0.state == "present"
+  tags: user-experimenter-dynamic
+
