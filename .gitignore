@@ -1,4 +1,9 @@
 # Byte-compiled / optimized / DLL files
+**/.gitignore
+**/.travis.yml
+**/.swagger-codegen/
+**/.swagger-codegen-ignore
+.idea/
 __pycache__/
 *.py[cod]
 *$py.class
