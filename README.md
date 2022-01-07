@@ -5,14 +5,33 @@ Client for automatically managing SSH keys in bastion hosts
 
 Python 3.9+, Ansible 2.11+
 
-## Directory Structure
+## Directory Structure and Installation
 
 Drop auto-generated clients from swagger directly here (so they end up in
 `python-client-generated` folder). Update `python-client-generated/setup.py`
 so it installs as its own separate package. 
 
-Use `pip install -e python-client-generated` for development, otherwise
-install as dependency.
+
+Pushing to PyPi is separated for the auto-generated swagger client and for the Bastion Key Client itself. 
+To push updated swagger client:
+```buildoutcfg
+$ cd python-client-generated
+$ rm dist/*
+$ python setup.py sdist bdist_wheel
+$ twine upload dist/*
+```
+(when updating swagger client, be sure to preserve/update `python-client-generated/setup.py` as it is not default)
+
+Use `pip install python-client-generated/` for development, otherwise install as dependency from PyPi as 
+`pip install bastion-key-swagger-client`. 
+
+To push Bastion Key Client to PyPi, do
+```buildoutcfg
+$ rm dist/*
+$ python setup.py sdist bdist_wheel
+$ twine upload dist/*
+```
+from the top level directory
 
 ## Principle of operation
 The script is designed to be run as a cron job from one or more bastion hosts, periodically interrogating
