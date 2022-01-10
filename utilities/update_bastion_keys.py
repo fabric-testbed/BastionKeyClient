@@ -26,11 +26,13 @@
 
 import argparse
 import sys
+import atexit
 
 import dotenv
 import logging
 import os
 from datetime import datetime, timedelta, timezone
+from filelock import FileLock, Timeout
 
 from bastion_key_client.bastion_ansible import BastionAnsibleUserList
 from bastion_key_client.bastion_homedir import HomedirScanner
@@ -40,6 +42,17 @@ from swagger_client.configuration import Configuration
 from swagger_client.api.sshkeys_api import SshkeysApi
 
 TSFORMAT = "%Y-%m-%d %H:%M:%S%z"
+
+lock = None
+
+
+@atexit.register
+def exit_handler():
+    if lock:
+        lock.release()
+    else:
+        logging.warning("No lock was acquired. Exiting.")
+
 
 if __name__ == "__main__":
 
@@ -68,9 +81,21 @@ if __name__ == "__main__":
         dotconfig["BACKOFF_PERIOD"] = "1440"  # one day
     if not dotconfig.get("HOME_PREFIX"):
         dotconfig["HOME_PREFIX"] = "/home"
+    if not dotconfig.get("LOCK_FILE"):
+        dotconfig["LOCK_FILE"] = "/tmp/bastion-timestamp.lock"
     if not dotconfig.get("UIS_API_SECRET"):
-        print(f".env configuration file must specify UIS_API_SECRET")
+        logging.error(f".env configuration file must specify UIS_API_SECRET. "
+                      f"Update configuration and try again. Exiting")
         sys.exit(-1)
+
+    # lock
+    lock = FileLock(dotconfig["LOCK_FILE"], 0)
+    try:
+        lock.acquire(timeout=10)
+    except Timeout:
+        logging.error(f"Unable to aquire file lock, another instance is likely executing. If you are sure,"
+                      f" remove file {dotconfig['LOCK_FILE']} and try again. Exiting.")
+        sys.exit(-2)
 
     # figure out how far to go back in time
     if os.path.isfile(dotconfig["TIMESTAMP_FILE"]):

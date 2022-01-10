@@ -87,6 +87,7 @@ following parameters can be specified:
 | UIS_HOST_SSL_VALIDATE | O | True | Warnings from urllib will be printed if `False` |
 | UIS_API_SECRET | M |  | 
 | TIMESTAMP_FILE | O | /tmp/bastion-timestamp |
+| LOCK_FILE | O | /tmp/bastion-timestamp.lock |
 | BACKOFF_PERIOD | O | 1440 | In minutes | 
 | EXCLUDE_LIST_FILE | O | | Exclude home directories of these users (white space separated)  |
 | HOME_PREFIX | O | /home |
