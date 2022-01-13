@@ -27,6 +27,7 @@ from typing import List
 
 import enum
 import json
+import os
 from dataclasses import dataclass
 
 from swagger_client.models.ssh_key_bastion import SshKeyBastion
@@ -165,9 +166,21 @@ class BastionAnsibleUserList:
             self.users[key.login] = BastionAnsibleUser(key.login, key.gecos)
         self.users[key.login].add_key(key)
 
+    @property
+    def usercount(self):
+        return len(self.users)
+
+    @property
+    def usernames(self):
+        return list(self.users.keys())
+
     def to_json(self) -> str:
         jsondict = {"community": {"experimenter": [x.to_jsonobj() for x in self.users.values()]}}
         return json.dumps(jsondict, indent=2)
+
+    @staticmethod
+    def get_package_path():
+        return os.path.dirname(__file__)
 
 
 class BastionAnsibleException(Exception):
