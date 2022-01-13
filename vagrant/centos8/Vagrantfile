@@ -71,6 +71,7 @@ Vagrant.configure("2") do |config|
   # SHELL
 
   config.vm.provision "shell", inline: <<-SHELL
+    dnf -y install epel-release
     dnf update -y
   SHELL
     
