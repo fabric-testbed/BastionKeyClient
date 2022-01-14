@@ -168,6 +168,8 @@ if __name__ == "__main__":
     # populate initially
     userlist = BastionAnsibleUserList(uis_keys)
 
+    logger.debug(f'Account and key list after talking to UIS: {userlist}')
+
     # scan home directories
     exclude_list = list()
     logger.debug(f'Reading exclude list from {dotconfig["EXCLUDE_LIST_FILE"]}')
@@ -183,6 +185,8 @@ if __name__ == "__main__":
                                   dotconfig["HOME_PREFIX"], prejudice)
     for key in home_scanner.scan():
         userlist.add_key(key)
+
+    logger.debug(f'Account and key list after scanning home directories {userlist}')
 
     if userlist.usercount > 0:
         # save to JSON extra vars file

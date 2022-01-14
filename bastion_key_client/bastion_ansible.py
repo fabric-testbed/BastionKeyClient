@@ -63,6 +63,16 @@ class BastionAnsibleKey:
     def to_jsonobj(self):
         return self.__dict__.copy()
 
+    def __str__(self):
+        parts = self.key.split(' ')
+        if len(parts) == 3:
+            return parts[2] + ": " + self.state
+        else:
+            return self.key[-40:] + ": " + self.state
+
+    def __repr__(self):
+        return str(self)
+
 
 class BastionAnsibleUser:
     """
@@ -110,9 +120,10 @@ class BastionAnsibleUser:
         :return:
         """
         if bastion_key.login != self.username:
-            raise BastionAnsibleException(f'Attempting attempt key of user {bastion_key.login} '
+            raise BastionAnsibleException(f'Attempting to add key of user {bastion_key.login} '
                                           f'to the record of user {self.username}')
         encoded_key1 = bastion_key.public_openssh.split()[1]
+
         for existing_key in self.ssh_key:
             # check for duplicates (although shouldn't really happen)
             encoded_key2 = existing_key.key.split()[1]
@@ -121,16 +132,25 @@ class BastionAnsibleUser:
                 if existing_key.state == AnsibleStatus.present.name and \
                         bastion_key.status == BastionKeyStatus.deactivated.name:
                     existing_key.state = AnsibleStatus.absent.name
+                return
+
         if bastion_key.status == BastionKeyStatus.active.name:
             ansible_status = AnsibleStatus.present
         else:
             ansible_status = AnsibleStatus.absent
+
         self.ssh_key.append(BastionAnsibleKey(bastion_key.public_openssh, ansible_status.name))
 
     def to_jsonobj(self):
         odict = self.__dict__.copy()
         odict['ssh_key'] = [x.to_jsonobj() for x in self.ssh_key]
         return odict
+
+    def __str__(self):
+        return self.username + ": " + ", ".join([str(k) for k in self.ssh_key])
+
+    def __repr__(self):
+        return str(self)
 
 
 class BastionAnsibleUserList:
@@ -181,6 +201,9 @@ class BastionAnsibleUserList:
     @staticmethod
     def get_package_path():
         return os.path.dirname(__file__)
+
+    def __str__(self):
+        return "\n".join([str(u) for u in self.users.values()])
 
 
 class BastionAnsibleException(Exception):
