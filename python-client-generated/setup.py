@@ -12,8 +12,8 @@
 
 from setuptools import setup, find_packages  # noqa: H301
 
-NAME = "bastion-key-swagger-client"
-VERSION = "1.0.0"
+NAME = "uis-swagger-client"
+VERSION = "1.1.0"
 # To install the library, run the following
 #
 # python setup.py install

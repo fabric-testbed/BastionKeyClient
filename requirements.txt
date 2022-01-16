@@ -1,6 +1,6 @@
 attrs==20.3.0
 Authlib==0.15.2
-bastion-key-swagger-client==1.0.0
+uis-swagger-client==1.1.0
 bleach==3.3.0
 certifi==2020.12.5
 cffi==1.14.4
