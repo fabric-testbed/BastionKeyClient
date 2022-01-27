@@ -88,11 +88,17 @@ $ sudo pip3 install ansible
 $ sudo pip3 install bastion-key-client
 ```
 
-It is recommended that `/usr/local/bin` is added to `secure_path` in `/etc/sudoers/` or else the script
-is symlinked to `/usr/bin`. The script can then be invoked (using absolute paths, after creating appropriate
-configuration files):
+If deploying as non root, it is recommended that `/usr/local/bin` is added to `secure_path` in `/etc/sudoers/` 
+or else the script is symlinked to `/usr/bin` (a more secure approach). The script can then be invoked 
+(using absolute paths, after creating appropriate configuration files):
 ```
 $ sudo /usr/local/bin/update_bastion_keys.py -c /home/vagrant/bastion-env
+```
+For crontab deployment, remember that cron jobs have no access to environment variables, including PATH
+so be sure to add /usr/local/bin to PATH for crontab configuration:
+```
+PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin
+* * * * * /usr/local/bin/update_bastion_keys.py -c /root/.update_bastion_keys.env
 ```
 
 ## Configuration
