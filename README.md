@@ -100,7 +100,10 @@ so be sure to add /usr/local/bin to PATH for crontab configuration:
 PATH=/bin:/sbin/:/usr/bin:/usr/sbin:/usr/local/bin
 * * * * * /usr/local/bin/update_bastion_keys.py -c /root/.update_bastion_keys.env
 ```
-
+or alternatively
+```
+* * * * * export PATH=/usr/bin:/usr/local/bin; /usr/local/bin/update_bastion_keys.py -c /root/.update_bastion_keys.env
+```
 ## Configuration
 
 The behavior of the script is configured largely via a `.env` file (formatted as a set of Bash
