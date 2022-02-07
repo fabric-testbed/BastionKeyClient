@@ -104,6 +104,17 @@ or alternatively
 ```
 * * * * * export PATH=/usr/bin:/usr/local/bin; /usr/local/bin/update_bastion_keys.py -c /root/.update_bastion_keys.env
 ```
+
+Note that SSHd must be configured to disallow SCP and SFTP for all users whose keys are managed by this script 
+otherwise they can manipulate allowed keys outside of the control of UIS. Additionally TTY creation must be
+disallowed  (selectively for accounts managed by this script or globally for the host) in order to prevent 
+users from logging into the bastion host and directly manipulating the keys. The following options can be used 
+in `sshd_config`: 
+
+```
+X11Forwarding no
+PermitTTY no
+```
 ## Configuration
 
 The behavior of the script is configured largely via a `.env` file (formatted as a set of Bash
@@ -135,7 +146,7 @@ In addition the built-in ansible role has a ansibgle.cfg file that sets log path
 You can change this configuration on an already deployed system by editing this file typically located
 some place like `/usr/local/lib/python3.9/site-packages/bastion_key_client/ansible/fabric-bastion/ansible.cfg`.
 
-## Deployment and Testing
+## Testing
 
 ### Local testing for development
 
