@@ -43,6 +43,7 @@ from bastion_key_client.bastion_homedir import HomedirScanner
 from swagger_client.api_client import ApiClient
 from swagger_client.configuration import Configuration
 from swagger_client.api.sshkeys_api import SshkeysApi
+import swagger_client.rest
 
 TSFORMAT = "%Y-%m-%d %H:%M:%S%z"
 
@@ -164,6 +165,8 @@ if __name__ == "__main__":
         uis_keys = ssh_api.bastionkeys_get(secret=dotconfig["UIS_API_SECRET"], since_date=ts)
     except urllib3.exceptions.MaxRetryError:
         logger.error(f'Unable to contact UIS/Core API at {dotconfig["UIS_HOST_URL"]}, continuing')
+    except swagger_client.rest.ApiException as e:
+        logger.error(f'UIS/CoreAPI returned API error. Will continue regardless. Error: {e}')
 
     # populate initially
     userlist = BastionAnsibleUserList(uis_keys)

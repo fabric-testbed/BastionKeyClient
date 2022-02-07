@@ -11,6 +11,7 @@ from threading import Thread
 from swagger_client.api_client import ApiClient
 from swagger_client.configuration import Configuration
 from swagger_client.api.sshkeys_api import SshkeysApi
+import swagger_client.rest
 
 TSFORMAT = "%Y-%m-%d %H:%M:%S%z"
 
@@ -23,6 +24,9 @@ def call_uis(ssh_api, secret, tst):
         uis_keys = ssh_api.bastionkeys_get(secret=secret, since_date=tst)
     except urllib3.exceptions.MaxRetryError:
         logger.error(f'Unable to contact UIS/Core API at {dotconfig["UIS_HOST_URL"]}, continuing')
+    except swagger_client.rest.ApiException as e:
+        logger.error(f'UIS returned API error {e}')
+
     print(f'Retrieved keys for {uis_keys=}')
 
 
