@@ -30,7 +30,8 @@ import os
 import pwd
 import re
 from datetime import datetime, timezone
-from swagger_client.models.ssh_key_bastion import SshKeyBastion
+
+from .bastion_key import BastionKey
 
 KEYTSREGEX = r"^.*_\(([\d]{4}-[\d]{2}-[\d]{2}_[\d]{2}:[\d]{2}:[\d]{2}\+0000)\)_$"
 TSFORMAT = "%Y-%m-%d_%H:%M:%S%z"
@@ -89,7 +90,7 @@ class HomedirScanner:
         self.prejudice = prejudice
         self.home_prefix = home_prefix
 
-    def scan(self) -> List[SshKeyBastion]:
+    def scan(self) -> List[BastionKey]:
         """
         Scan the home directories, locate expired keys and return a list
         of SshKeyBastion structures.
@@ -121,7 +122,8 @@ class HomedirScanner:
                 else:
                     userkeys_list = filter(keyfilter, userkeys.split('\n'))
 
-                ret.extend([SshKeyBastion(key, homedir.name, gecos, "deactivated") for key in userkeys_list])
+                ret.extend([BastionKey(gecos=gecos, login=homedir.name,
+                                       public_openssh=key,  status="deactivated") for key in userkeys_list])
             except FileNotFoundError:
                 # skipping
                 continue

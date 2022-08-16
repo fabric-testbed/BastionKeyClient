@@ -1,3 +1,8 @@
+[![Requirements Status](https://requires.io/github/fabric-testbed/BastionKeyClient/requirements.svg?branch=main)](https://requires.io/github/fabric-testbed/BastionKeyClient/requirements/?branch=main)
+
+![PyPI](https://img.shields.io/pypi/v/bastion-key-client?style=plastic)
+
+
 # BastionKeyClient
 Client for automatically managing SSH keys in bastion hosts
 
@@ -6,8 +11,12 @@ Client for automatically managing SSH keys in bastion hosts
 Python 3.9+, Ansible 5.1.0+ (script package will install Ansible as a dependency), Vagrant (for testing)
 
 ## Principle of operation
-The script is designed to be run as a cron job/systemd timer from every bastion host, periodically interrogating
-UIS/CoreAPI `bastionkeys` endpoint for new and expired bastion SSH keys. 
+The script is designed to be run as a cron job/systemd timer from every bastion host
+UIS/CoreAPI (*UIS* name is used throughout the document, however the new permanent name
+of the service is CoreAPI). CoreAPI maintains nearly drop-in compatibility with UIS, which
+has been deprecated.
+
+The scripts periodically interrogates `bastionkeys` endpoint for new and expired bastion SSH keys. 
 It then uses [Ansible](bastion_key_client/ansible/README.md) to update ~/.ssh/authorized_keys file for each
 user whose key has changed, creating user accounts if necessary. 
 In addition to avoid stale keys it checks the comments on the keys which have
@@ -54,27 +63,12 @@ to the user executing the script (Ansible is installed as a dependency).
 
 ## Directory Structure and Dev Installation
 
-Drop auto-generated clients from swagger directly into top directory (so they end up in
-`python-client-generated` folder). Update `python-client-generated/setup.py`
-so it installs as its own separate package. 
-
-Pushing to PyPi is separated for the auto-generated swagger client and for the Bastion Key Client itself. 
-To push updated swagger client:
-```shell
-$ cd python-client-generated
-$ rm dist/*
-$ python setup.py bdist_wheel
-$ twine upload dist/*
-```
-(when updating swagger client, be sure to preserve/update `python-client-generated/setup.py` as it is not default)
-
-Use `pip install python-client-generated/` for development, otherwise install as dependency from PyPi as 
-`pip install bastion-key-swagger-client`. 
+Note: the client no longer relies on auto-generated Swagger client stubs and invokes the CoreAPI directly.
 
 To push Bastion Key Client to PyPi, do
 ```shell
 $ rm dist/*
-$ python setup.py sdist bdist_wheel
+$ python -m build
 $ twine upload dist/*
 ```
 from the top level directory
@@ -121,19 +115,19 @@ The behavior of the script is configured largely via a `.env` file (formatted as
 variable assignments). The filename is assumed to be `.env` unless `-c` option is used. The
 following parameters can be specified:
 
-| Parameter name | (M)andatory or (O)ptional| Default value | Notes |
-|--- |--- |--- | --- | 
-| UIS_HOST_URL | O | https://127.0.0.1:8443/ |
-| UIS_HOST_SSL_VALIDATE | O | True | Warnings from urllib will be printed if `False` |
-| UIS_API_SECRET | M |  | 
-| TIMESTAMP_FILE | O | /tmp/bastion-timestamp |
-| LOCK_FILE | O | /tmp/bastion-timestamp.lock |
-| LOG_FILE | O | stdout | Can be 'stdout' or a file name | 
-| EXTRA_VARS_FILE | O | /tmp/bastion-users.json | File to which --extra-vars (account and key information) of the Ansible role are saved prior to execution. Normally deleted after completion. |
-| BACKOFF_PERIOD | O | 1440 | In minutes | 
-| EXCLUDE_LIST_FILE | M | | Exclude home directories of these users (white space separated). To serve as a reminder, no default is provided, script exits with an error if not specified. |
-| HOME_PREFIX | O | /home |
-| WITH_PREJUDICE | O | False | If `True` remove keys that don't have a timestamp |
+| Parameter name        | (M)andatory or (O)ptional | Default value               | Notes                                                                                                                                                         |
+|-----------------------|---------------------------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| UIS_HOST_URL          | O                         | https://127.0.0.1:8443/     | UIS/CoreAPI URL                                                                                                                                               |
+| UIS_HOST_SSL_VALIDATE | O                         | True                        | UIS/CoreAPI SSL validation. Warnings from urllib will be printed if `False`                                                                                   |
+| UIS_API_SECRET        | M                         |                             | UIS/CoreAPI secret string                                                                                                                                     |
+| TIMESTAMP_FILE        | O                         | /tmp/bastion-timestamp      |                                                                                                                                                               |
+| LOCK_FILE             | O                         | /tmp/bastion-timestamp.lock |                                                                                                                                                               |
+| LOG_FILE              | O                         | stdout                      | Can be 'stdout' or a file name                                                                                                                                | 
+| EXTRA_VARS_FILE       | O                         | /tmp/bastion-users.json     | File to which --extra-vars (account and key information) of the Ansible role are saved prior to execution. Normally deleted after completion.                 |
+| BACKOFF_PERIOD        | O                         | 1440                        | In minutes                                                                                                                                                    | 
+| EXCLUDE_LIST_FILE     | M                         |                             | Exclude home directories of these users (white space separated). To serve as a reminder, no default is provided, script exits with an error if not specified. |
+| HOME_PREFIX           | O                         | /home                       |
+| WITH_PREJUDICE        | O                         | False                       | If `True` remove keys that don't have a timestamp                                                                                                             |
 
 ## Logging
 

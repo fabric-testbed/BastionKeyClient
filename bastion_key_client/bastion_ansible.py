@@ -23,14 +23,13 @@
 #
 #
 # Author: Ilya Baldin (ibaldin@renci.org)
-from typing import List
 
 import enum
 import json
 import os
 from dataclasses import dataclass
 
-from swagger_client.models.ssh_key_bastion import SshKeyBastion
+from .bastion_key import BastionKey
 
 
 class BastionKeyStatus(enum.Enum):
@@ -113,7 +112,7 @@ class BastionAnsibleUser:
         self.create_home = "yes"
         self.ssh_key = list()
 
-    def add_key(self, bastion_key: SshKeyBastion):
+    def add_key(self, bastion_key: BastionKey):
         """
         Add key to a person
         :param bastion_key:
@@ -163,7 +162,7 @@ class BastionAnsibleUserList:
     - Key is expired/deactivated - found in /home/<login>/.ssh/authorized_keys,
       login is known, gecos needs to be looked up by getent
     """
-    def __init__(self, bastion_key_list: List[SshKeyBastion]):
+    def __init__(self, bastion_key_list: list[BastionKey]):
         """
         Convert a list of keys into a Bastion User list, checking for key duplicates (just in case).
         A deactivated key always wins over an active key if fingerprints match.
@@ -174,7 +173,7 @@ class BastionAnsibleUserList:
         for bk in bastion_key_list:
             self.add_key(bk)
 
-    def add_key(self, key: SshKeyBastion) -> None:
+    def add_key(self, key: BastionKey) -> None:
         """
         Add a new key (potentially creating a dictionary entry and new user)
         :param key:

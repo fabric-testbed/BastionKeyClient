@@ -32,18 +32,17 @@ import dotenv
 import logging
 import os
 from datetime import datetime, timedelta, timezone
+import json
 
-import urllib3.exceptions
+import requests
 from filelock import FileLock, Timeout
 import ansible_runner
+
+from bastion_key_client.bastion_key import BastionKey
 
 from bastion_key_client.bastion_ansible import BastionAnsibleUserList
 from bastion_key_client.bastion_homedir import HomedirScanner
 
-from swagger_client.api_client import ApiClient
-from swagger_client.configuration import Configuration
-from swagger_client.api.sshkeys_api import SshkeysApi
-import swagger_client.rest
 
 TSFORMAT = "%Y-%m-%d %H:%M:%S%z"
 
@@ -56,8 +55,10 @@ def exit_handler():
     if lock:
         lock.release()
     else:
-        if not logger:
+        if logger:
             logger.warning("No lock was acquired. Exiting.")
+        else:
+            print("No lock was acquired, exiting")
 
 
 if __name__ == "__main__":
@@ -73,7 +74,6 @@ if __name__ == "__main__":
                         help="Do not execute the playbook, simply collect the playbook extra variables in a file.")
 
     args = parser.parse_args()
-
 
     # massage the config with defaults
     dotconfig = dotenv.dotenv_values(args.config)
@@ -114,12 +114,12 @@ if __name__ == "__main__":
 
     if not dotconfig.get("UIS_API_SECRET"):
         logger.error(f".env configuration file must specify UIS_API_SECRET. "
-                      f"Update configuration and try again. Exiting")
+                     f"Update configuration and try again. Exiting")
         sys.exit(-1)
 
     if not dotconfig.get("EXCLUDE_LIST_FILE"):
         logger.error(f".env configuration file must specify EXCLUDE_LIST_FILE. "
-                      f"Update configuration and try again. Exiting")
+                     f"Update configuration and try again. Exiting")
 
     # lock
     lock = FileLock(dotconfig["LOCK_FILE"], 0)
@@ -128,7 +128,7 @@ if __name__ == "__main__":
         lock.acquire(timeout=5)
     except Timeout:
         logger.error(f"Unable to acquire file lock, another instance is likely executing. If you are sure,"
-                      f" remove file {dotconfig['LOCK_FILE']} and try again. Exiting.")
+                     f" remove file {dotconfig['LOCK_FILE']} and try again. Exiting.")
         sys.exit(-2)
 
     # figure out how far to go back in time
@@ -152,29 +152,39 @@ if __name__ == "__main__":
     logger.info(f'Using time {ts} to query UIS/CoreAPI (now is {now.strftime(TSFORMAT)})')
 
     # prepare API client
-    config = Configuration()
-    config.host = dotconfig["UIS_HOST_URL"]
-    config.verify_ssl = True if dotconfig.get("UIS_HOST_SSL_VALIDATE", "True") == "True" else False
-
-    api_client = ApiClient(config)
-    ssh_api = SshkeysApi(api_client)
+    api_call = dotconfig["UIS_HOST_URL"] + '/bastionkeys'
+    api_params = {'secret': dotconfig["UIS_API_SECRET"],
+                  'since_date': ts}
+    verify_ssl = True if dotconfig.get("UIS_HOST_SSL_VALIDATE", "True") == "True" else False
 
     # call the api
-    uis_keys = list()
+    core_api_result = None
     try:
-        uis_keys = ssh_api.bastionkeys_get(secret=dotconfig["UIS_API_SECRET"], since_date=ts)
-    except urllib3.exceptions.MaxRetryError:
+        api_session = requests.Session()
+        api_session.headers = {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json'
+        }
+        logger.debug(f'Calling {api_call}')
+        response = api_session.get(api_call, params=api_params, verify=verify_ssl)
+        core_api_result = json.loads(response.text)
+    except requests.exceptions.ConnectionError:
         logger.error(f'Unable to contact UIS/Core API at {dotconfig["UIS_HOST_URL"]}, continuing')
-    except swagger_client.rest.ApiException as e:
-        logger.error(f'UIS/CoreAPI returned API error. Will continue regardless. Error: {e}')
 
     # populate initially
-    userlist = BastionAnsibleUserList(uis_keys)
+    if core_api_result:
+        logger.info(f'Retrieved {core_api_result["size"]} keys with status {core_api_result["status"]}')
+        logger.debug(f'Full result {core_api_result=}')
+        key_list = [BastionKey(gecos=x['gecos'], login=x['login'], public_openssh=x['public_openssh'], status=x['status'])
+                    for x in core_api_result['results']]
+    else:
+        logger.error(f'Unable to parse the empty result from the API')
 
-    logger.debug(f'Account and key list after talking to UIS: {userlist}')
+    userlist = BastionAnsibleUserList(key_list)
+
+    logger.debug(f'Account and key list after talking to UIS/CoreAPI: {userlist}')
 
     # scan home directories
-    exclude_list = list()
     logger.debug(f'Reading exclude list from {dotconfig["EXCLUDE_LIST_FILE"]}')
     with open(dotconfig['EXCLUDE_LIST_FILE'], 'r', encoding='utf-8') as f:
         list_from_file = f.read()
