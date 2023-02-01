@@ -85,10 +85,11 @@ class HomedirScanner:
     Uses getent to collect gecos fields matching home directories
     because this is needed by Ansible.
     """
-    def __init__(self, exclude_list: List[str], home_prefix: str, prejudice: bool = False):
+    def __init__(self, exclude_list: List[str], home_prefix: str, logger, prejudice: bool = False):
         self.exclude_list = exclude_list
         self.prejudice = prejudice
         self.home_prefix = home_prefix
+        self.logger = logger
 
     def scan(self) -> List[BastionKey]:
         """
@@ -107,9 +108,13 @@ class HomedirScanner:
             try:
                 gecos = pwd.getpwnam(homedir.name).pw_gecos
             except KeyError:
-                # unable to find user in password database, exit with error
-                raise BastionHomedirException(f'Unable to find user {homedir.name} in password database, '
-                                              f'unable to proceed')
+                # unable to find matching user in password database, exit with error
+                #raise BastionHomedirException(f'Unable to find user {homedir.name} in password database, '
+                #                              f'unable to proceed')
+                self.logger.warning(f'Identified home directory {homedir.name} without a matching /etc/passwd entry - '
+                                    f'this should be checked. Continuing.')
+                continue
+
             # read home/.ssh/authorized_keys
             try:
                 with open(os.path.join(homedir.path, ".ssh", "authorized_keys"),
@@ -126,6 +131,7 @@ class HomedirScanner:
                                        public_openssh=key,  status="deactivated") for key in userkeys_list])
             except FileNotFoundError:
                 # skipping
+                self.logger.debug(f'Unable to find authorized_keys file in {homedir.name}, continuing.')
                 continue
 
         return ret
