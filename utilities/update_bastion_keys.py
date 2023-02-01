@@ -195,7 +195,7 @@ if __name__ == "__main__":
     prejudice = True if dotconfig.get("WITH_PREJUDICE", "False") == "True" else False
     logger.debug(f'Preparing to scan {dotconfig["HOME_PREFIX"]} for users keys. Using prejudice setting {prejudice}')
     home_scanner = HomedirScanner(exclude_list,
-                                  dotconfig["HOME_PREFIX"], prejudice)
+                                  dotconfig["HOME_PREFIX"], logger, prejudice)
     for key in home_scanner.scan():
         userlist.add_key(key)
 
