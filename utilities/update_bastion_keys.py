@@ -175,8 +175,10 @@ if __name__ == "__main__":
     if core_api_result:
         logger.info(f'Retrieved {core_api_result["size"]} keys with status {core_api_result["status"]}')
         logger.debug(f'Full result {core_api_result=}')
+        # use filter in case CoreAPI returns invalid results without some  fields
         key_list = [BastionKey(gecos=x['gecos'], login=x['login'], public_openssh=x['public_openssh'], status=x['status'])
-                    for x in core_api_result['results']]
+                    for x in filter(lambda y: y.get('login') is not None,
+                                    core_api_result['results'])]
     else:
         logger.error(f'Unable to parse the empty result from the API')
 
