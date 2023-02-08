@@ -7,7 +7,7 @@ chardet==4.0.0
 charset-normalizer==2.0.10
 click==7.1.2
 colorama==0.4.4
-cryptography==3.3.2
+cryptography==39.0.1
 docutils==0.17.1
 Flask==1.1.2
 idna==2.10
