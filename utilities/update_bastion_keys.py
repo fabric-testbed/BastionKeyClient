@@ -162,8 +162,7 @@ if __name__ == "__main__":
     try:
         api_session = requests.Session()
         api_session.headers = {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
+            'Accept': 'application/json'
         }
         logger.debug(f'Calling {api_call}')
         response = api_session.get(api_call, params=api_params, verify=verify_ssl)
