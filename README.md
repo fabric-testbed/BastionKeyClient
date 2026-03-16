@@ -1,5 +1,3 @@
-[![Requirements Status](https://requires.io/github/fabric-testbed/BastionKeyClient/requirements.svg?branch=main)](https://requires.io/github/fabric-testbed/BastionKeyClient/requirements/?branch=main)
-
 ![PyPI](https://img.shields.io/pypi/v/bastion-key-client?style=plastic)
 
 
@@ -8,7 +6,7 @@ Client for automatically managing SSH keys in bastion hosts
 
 ## Requirements.
 
-Python 3.9+, Ansible 5.1.0+ (script package will install Ansible as a dependency), Vagrant (for testing)
+Python 3.10+, Ansible 9.0+ (installed automatically as a dependency)
 
 ## Principle of operation
 The script is designed to be run as a cron job/systemd timer from every bastion host
@@ -75,10 +73,9 @@ from the top level directory
 
 ## Production installation and invocation
 
-Since the script must be executed as sudo, it is recommended that both the script package and ansible are 
-installed via sudo:
+Since the script must be executed as sudo, it is recommended that the script package is
+installed via sudo (Ansible is installed automatically as a dependency):
 ```bash
-$ sudo pip3 install ansible
 $ sudo pip3 install bastion-key-client
 ```
 
@@ -136,38 +133,33 @@ variable to an absolute path of the log file (see Configuration section).
 
 If using `-d` debug option, `stdout` is always used for logging and LOG_FILE setting is ignored.
 
-In addition the built-in ansible role has a ansibgle.cfg file that sets log path to `/tmp/bastion-ansible.log`.
+In addition the built-in ansible role has an ansible.cfg file that sets log path to `/tmp/bastion-ansible.log`.
 You can change this configuration on an already deployed system by editing this file typically located
-some place like `/usr/local/lib/python3.9/site-packages/bastion_key_client/ansible/fabric-bastion/ansible.cfg`.
+some place like `/usr/local/lib/python3.10/site-packages/bastion_key_client/ansible/fabric-bastion/ansible.cfg`.
 
 ## Testing
 
+### Smoke test with Docker
+
+A quick way to verify the package installs and imports correctly:
+```bash
+$ docker run --rm -v $(pwd):/app -w /app python:3.10-slim \
+    sh -c "pip install . && python -c 'import bastion_key_client; print(bastion_key_client.__VERSION__)'"
+```
+
+### Test mode
+
+The script supports a `-t` flag that queries the CoreAPI endpoint and generates the Ansible
+extra-vars JSON file without executing the playbook. Combined with `-d` for debug output:
+```bash
+$ update_bastion_keys.py -c /path/to/.env -t -d
+```
+This validates API connectivity, authentication, and key parsing without modifying the host.
+
 ### Local testing for development
 
-Easiest to spin up a Vagrant VM with CentOS 8 or whatever appropriate, make sure Python3.9+
-and Ansible 2.12+ are installed on it (Ansible is installed as a dependency by pip). 
-The [Vagrantfile](vagrant/centos8/Vagrantfile) automates the example installation.
-
-Some example files:
-
-ansible.cfg 
-```ini
-[defaults]
-deprecation_warnings=False
-```
-Test playbook
-```yaml
-- name: update apache locally
-  hosts: localhost
-  connection: local
-  become: yes
-  tasks:
-  - name: update apache
-    ansible.builtin.yum:
-      name: httpd
-      state: latest
-```
-Install the script on the Vagrant host via pip, then configure it to talk to some
-instance of UIS (including in DOM0, since the Vagrant setup sets up a private network).
+Spin up a VM (e.g., AlmaLinux 9 or similar) with Python 3.10+ installed.
+The [Vagrantfile](vagrant/centos8/Vagrantfile) provides a starting point but
+references CentOS 8 (EOL) and may need updating for current OS images.
 
 Create a `.env` configuration file and execute manually or via cron/systemd timer.
