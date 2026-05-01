@@ -4,6 +4,13 @@
 # BastionKeyClient
 Client for automatically managing SSH keys in bastion hosts
 
+## Release notes
+
+### 1.9.0
+- Removed vulnerable Authlib dependency (CVE-2026-27962).
+- Slimmed `requirements.txt` to direct dependencies with refreshed minimum versions.
+- Bumped `python_requires` to `>=3.10`.
+
 ## Requirements.
 
 Python 3.10+, Ansible 9.0+ (installed automatically as a dependency)
